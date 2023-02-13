@@ -1,0 +1,59 @@
+version: '3.7'
+
+volumes:
+    api_node_modules:
+        driver: local
+    ui_node_modules:
+        driver: local
+
+services:
+    minio:
+        image: minio/minio:latest
+        restart: always
+        ports:
+          - 10000:9000
+          - 10001:9001
+        environment:
+          MINIO_ROOT_USER: "root"
+          MINIO_ROOT_PASSWORD: "rootpass"
+          MINIO_BROWSER_REDIRECT_URL:  http://localhost:10001
+        entrypoint:
+          bash -c 'mkdir -p /data/repository && /opt/bin/minio server /data --console-address ":9001"'
+        volumes:
+          - ./s3-data:/data
+        healthcheck:
+          test: ["CMD", "curl", "-f", "http://localhost:9001/minio/health/live"]
+          interval: 30s
+          timeout: 20s
+          retries: 3
+    api:
+        image: node:18-bullseye
+        hostname: api
+        tty: true
+        environment:
+            TERM: "xterm-256color"
+            NODE_ENV: "development"
+            LOG_LEVEL: "debug"
+        volumes:
+            - api_node_modules:/srv/api/node_modules:delegated
+            - ./api:/srv/api:delegated
+        working_dir: /srv/api
+        command:
+            [ "npm", "run","develop" ]
+        ports:
+            - 8080:8080
+
+    ui:
+        image: node:18-bullseye
+        hostname: ui
+        tty: true
+        environment:
+            TERM: "xterm-256color"
+            NODE_ENV: "development"
+        volumes:
+            - ui_node_modules:/srv/ui/node_modules:delegated
+            - ./ui:/srv/ui:delegated
+        working_dir: /srv/ui
+        command: [ "npm", "run", "test:watch" ]
+
+
