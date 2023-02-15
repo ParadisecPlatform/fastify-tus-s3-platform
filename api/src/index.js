@@ -1,5 +1,6 @@
 import fp from "fastify-plugin";
 import { getS3Handle } from "./s3-utils.js";
+import { tusHeadHandler } from "./tus-head-handler.js";
 import { tusOptionsHandler } from "./tus-options-handler.js";
 import { tusPostHandler } from "./tus-post-handler.js";
 import { tusPatchHandler } from "./tus-patch-handler.js";
@@ -37,10 +38,14 @@ function tusS3Uploader(fastify, opts, done) {
     fastify.addContentTypeParser(
         "application/offset+octet-stream",
         { parseAs: "buffer" },
-        (req, payload, done) => done(null, payload)
+        (req, payload, done) => {
+            if (payload.length === 0) return done();
+            done(null, payload);
+        }
     );
 
     // wire up the routes
+    fastify.head(`${uploadRoutePath}/:uploadId`, tusHeadHandler);
     fastify.options(`${uploadRoutePath}`, tusOptionsHandler);
     fastify.post(`${uploadRoutePath}`, tusPostHandler);
     fastify.patch(`${uploadRoutePath}`, tusPatchHandler);
