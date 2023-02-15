@@ -2,4 +2,4 @@
 export const maxFileSize = "536870912000";
 
 // Supported TUS extensions
-export const tusExtensions = ["creation,creation-with-upload,expiration"];
+export const tusExtensions = ["creation,creation-with-upload"];

@@ -13,8 +13,6 @@ describe.only(`Test TUS OPTIONS handling`, () => {
         expect(response.headers.has("tus-max-size")).toBeTrue;
         expect(response.headers.get("tus-max-size")).toEqual("536870912000");
         expect(response.headers.has("tus-extension")).toBeTrue;
-        expect(response.headers.get("tus-extension")).toEqual(
-            "creation,creation-with-upload,expiration"
-        );
+        expect(response.headers.get("tus-extension")).toEqual("creation,creation-with-upload");
     });
 });
