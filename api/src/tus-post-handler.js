@@ -88,8 +88,10 @@ export async function tusPostHandler(req, res) {
 
         // cache the uploadId for subsequent patch requests
         await this.cache.set(uploadId, {
-            latestUploadOffset: req.headers["content-length"],
+            uploadLength: parseInt(req.headers["upload-length"]),
+            latestUploadOffset: parseInt(req.headers["content-length"]),
             latestPartNumber: 0,
+            metadata,
         });
 
         headers["upload-offset"] = 0;
@@ -130,8 +132,10 @@ export async function tusPostHandler(req, res) {
 
                 // cache the uploadId and part for subsequent patch requests
                 await this.cache.set(uploadId, {
-                    latestUploadOffset: req.headers["content-length"],
+                    uploadLength: parseInt(req.headers["upload-length"]),
+                    latestUploadOffset: parseInt(req.headers["content-length"]),
                     latestPartNumber: 1,
+                    metadata,
                     byUploadOffset: {
                         [req.headers["content-length"]]: part,
                     },
