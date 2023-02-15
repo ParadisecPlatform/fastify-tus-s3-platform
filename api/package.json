@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "develop": "npm run develop:server",
-        "develop:server": "npm install && ./node_modules/.bin/nodemon ./index.js",
+        "develop:server": "npm install && nodemon -w ./server.js -w ./src --ignore ./src/**/*.spec.js server.js",
         "test": "./node_modules/.bin/jest --runInBand",
         "test:watch": "npm install && NODE_OPTIONS=--experimental-vm-modules npx jest --watchAll --runInBand && npm run cleanup"
     },
@@ -21,7 +21,11 @@
         "@fastify/one-line-logger": "^1.1.1",
         "@fastify/sensible": "^5.2.0",
         "@paralleldrive/cuid2": "^2.0.1",
+        "cross-fetch": "^3.1.5",
         "fastify": "^4.12.0",
+        "fastify-plugin": "^4.5.0",
+        "file-system-cache": "^2.0.2",
+        "fs-extra": "^11.1.0",
         "nodemon": "^2.0.20"
     },
     "devDependencies": {
