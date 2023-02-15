@@ -48,7 +48,7 @@ function tusS3Uploader(fastify, opts, done) {
     fastify.head(`${uploadRoutePath}/:uploadId`, tusHeadHandler);
     fastify.options(`${uploadRoutePath}`, tusOptionsHandler);
     fastify.post(`${uploadRoutePath}`, tusPostHandler);
-    fastify.patch(`${uploadRoutePath}`, tusPatchHandler);
+    fastify.patch(`${uploadRoutePath}/:uploadId`, tusPatchHandler);
     done();
 }
 export default fp(tusS3Uploader);
