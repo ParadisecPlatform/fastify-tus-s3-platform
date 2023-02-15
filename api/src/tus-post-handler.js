@@ -82,10 +82,16 @@ export async function tusPostHandler(req, res) {
         location,
         "Tus-Resumable": "1.0.0",
     };
-    console.log(location, headers);
 
     if (!req.body) {
         // no request body so this is a basic creation, not creation with upload
+
+        // cache the uploadId for subsequent patch requests
+        await this.cache.set(uploadId, {
+            latestUploadOffset: req.headers["content-length"],
+            latestPartNumber: 0,
+        });
+
         headers["upload-offset"] = 0;
         return res.code(201).headers(headers).send();
     }
@@ -106,7 +112,7 @@ export async function tusPostHandler(req, res) {
             });
 
             // if we have the whole file then complete the upload
-            //   and return 201 with upload offset to the content length
+            //   and return 201 with upload offset set to the content length
             if (req.headers["content-length"] === req.headers["upload-length"]) {
                 await completeUpload({
                     client: this.s3client,
@@ -124,8 +130,10 @@ export async function tusPostHandler(req, res) {
 
                 // cache the uploadId and part for subsequent patch requests
                 await this.cache.set(uploadId, {
+                    latestUploadOffset: req.headers["content-length"],
+                    latestPartNumber: 1,
                     byUploadOffset: {
-                        [req.headers["upload-length"]]: part,
+                        [req.headers["content-length"]]: part,
                     },
                     byPartNumber: {
                         1: part,
