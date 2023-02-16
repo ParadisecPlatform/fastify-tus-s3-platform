@@ -1,10 +1,12 @@
 import fp from "fastify-plugin";
-import { getS3Handle } from "./s3-utils.js";
+import { Storage } from "./s3-utils.js";
 import { tusHeadHandler } from "./tus-head-handler.js";
 import { tusOptionsHandler } from "./tus-options-handler.js";
 import { tusPostHandler } from "./tus-post-handler.js";
 import { tusPatchHandler } from "./tus-patch-handler.js";
 import { FileSystemCache as Cache } from "file-system-cache";
+import debug from "debug";
+const log = debug("tus-s3-uploader:PLUGIN SETUP");
 
 function tusS3Uploader(fastify, opts, done) {
     // verify required params set
@@ -20,6 +22,8 @@ function tusS3Uploader(fastify, opts, done) {
     const uploadRoutePath = opts.uploadRoutePath ?? "/files";
     const cachePath = opts.cachePath ?? "./.cache";
 
+    log({ ...opts, uploadRoutePath, cachePath });
+
     fastify.addHook("onReady", async () => {
         // attach a cache object to the fastify instance when it's ready
         const cache = new Cache({
@@ -29,8 +33,10 @@ function tusS3Uploader(fastify, opts, done) {
         fastify.decorate("cache", cache);
 
         // and a handle to S3
-        const client = getS3Handle(opts);
-        fastify.decorate("s3client", client);
+        const storage = new Storage(opts);
+        fastify.decorate("storage", storage);
+
+        log({ cache });
     });
 
     // define a content type parse for tus uploads
