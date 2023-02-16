@@ -2,11 +2,11 @@ import fetch from "cross-fetch";
 import path from "node:path";
 import { stat } from "node:fs/promises";
 import { createReadStream } from "node:fs";
-import { getS3Handle, keyExists, removeObjects, abortUpload } from "./s3-utils";
+import { Storage } from "./s3-utils";
 
 describe.only(`Test TUS POST handling`, () => {
     const Bucket = "repository";
-    let s3client = getS3Handle({
+    let storage = new Storage({
         awsAccessKeyId: "root",
         awsSecretAccessKey: "rootpass",
         forcePathStyle: true,
@@ -152,8 +152,11 @@ describe.only(`Test TUS POST handling`, () => {
         expect(response.status).toEqual(201);
         const location = response.headers.get("location");
         const uploadId = location.split("/").pop();
-
-        await abortUpload({ client: s3client, Bucket: "repository", Key: "config.js", uploadId });
+        await storage.abortUpload({
+            Bucket: "repository",
+            Key: "config.js",
+            uploadId,
+        });
     });
     it(`Should succeed in performing a POST request with data (creation-with-upload)`, async () => {
         const file = "./src/config.js";
@@ -174,9 +177,12 @@ describe.only(`Test TUS POST handling`, () => {
         expect(response.status).toEqual(201);
         expect(response.headers.get("upload-offset")).toEqual(String(fileStats.size));
 
-        let exists = await keyExists({ client: s3client, Bucket, Key: "config.js" });
+        let exists = await storage.keyExists({ Bucket, Key: "config.js" });
         expect(exists).toBeTrue;
 
-        await removeObjects({ client: s3client, Bucket: "repository", keys: ["config.js"] });
+        await storage.removeObjects({
+            Bucket: "repository",
+            keys: ["config.js"],
+        });
     });
 });

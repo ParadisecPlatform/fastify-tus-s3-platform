@@ -1,66 +1,35 @@
 import { Buffer } from "node:buffer";
 import { Readable } from "stream";
 import { maxFileSize } from "./config.js";
-import { keyExists, bucketExists, createUpload, uploadPart, completeUpload } from "./s3-utils.js";
+import debug from "debug";
+const log = debug("tus-s3-uploader:POST");
 
 export async function tusPostHandler(req, res) {
-    // console.log(req.headers);
-    // 'upload-defer-length' is currently not allowed by server options
-    //  enable by setting 'creation-defer-length' on 'tusExtensions' in config.js
-    if (!req.headers["upload-length"] && !req.headers["upload-defer-length"]) {
-        return res.badRequest(
-            `Neither 'upload-length' not 'upload-defer-length' haeders were set. Set one.`
-        );
-    }
-    if (req.headers["upload-length"] && req.headers["upload-defer-length"]) {
-        return res.badRequest(
-            `Both 'upload-length' and 'upload-defer-length' headers were set. Set one only.`
-        );
-    }
-    if (!req.headers["upload-metadata"]) {
-        return res.badRequest(`Required header 'upload-metadata' not set.`);
-    }
-    if (req.headers["upload-defer-length"] && req.headers["upload-defer-length"] !== "1") {
-        return res.badRequest(`'upload-defer-length' header was set but it's not equal to '1'.`);
-    }
+    // validate the request
+    log("validate request headers");
+    let result = validateRequest.bind(this)(req, res);
+    if (result) return;
 
-    if (parseInt(req.headers["upload-length"]) > maxFileSize) {
-        return res.payloadTooLarge(
-            `The file to be uploaded is greater than the maxium allowable upload size of ${maxFileSize}.`
-        );
-    }
-
-    const host = `${req.protocol}://${req.hostname}${req.url}`;
+    // extra metadata from headers
+    log("extract metadata from headers");
     let metadata;
     try {
         metadata = extractUploadMetadata(req.headers["upload-metadata"]);
     } catch (error) {
+        log("ERROR extracting metadata");
         return res.badRequest(error.message);
     }
 
-    // if there's something in the body we need to confirm some other headers have been set
-    if (req.body) {
-        if (!req.headers["content-length"])
-            return res.badRequest(`'content-length' header is not set.`);
-        if (!req.headers["upload-length"])
-            return res.badRequest(`'upload-length headers is not set.`);
-        if (!req.headers["content-type"])
-            return res.badRequest(`'content-type' header is not set.`);
-        if (req.headers["content-type"] !== "application/offset+octet-stream")
-            res.unsupportedMediaType(
-                `'content-type' header must be 'application/offset+octet-stream'.`
-            );
-    }
-
     // ensure the bucket exists
-    let exists = await bucketExists({ client: this.s3client, Bucket: metadata.bucket });
+    log("ensure bucket exists");
+    let exists = await this.storage.bucketExists({ Bucket: metadata.bucket });
     if (!exists) return res.notFound(`Bucket '${metadata.bucket}' does not exist in the storage.`);
 
     // body or not, create the file in the S3 bucket
     if (!metadata.overwrite) {
+        log(`ensure file doesn't exist as 'overwrite = false'`);
         // check if the target file exists - abort if it does
-        let exists = await keyExists({
-            client: this.s3client,
+        let exists = await this.storage.keyExists({
             Bucket: metadata.bucket,
             Key: metadata.filename,
         });
@@ -71,12 +40,13 @@ export async function tusPostHandler(req, res) {
     }
 
     // create the file upload
-    const { uploadId } = await createUpload({
-        client: this.s3client,
+    log("create the multipart object in the storage");
+    const { uploadId } = await this.storage.createUpload({
         Bucket: metadata.bucket,
         Key: metadata.filename,
     });
 
+    const host = `${req.protocol}://${req.hostname}${req.url}`;
     const location = `${host}/${uploadId}`;
     const headers = {
         location,
@@ -84,6 +54,7 @@ export async function tusPostHandler(req, res) {
     };
 
     if (!req.body) {
+        log("no request body: update the cache and return 201");
         // no request body so this is a basic creation, not creation with upload
 
         // cache the uploadId for subsequent patch requests
@@ -100,12 +71,13 @@ export async function tusPostHandler(req, res) {
 
     // if there is a request body, then upload it
     if (req.body) {
+        log("request body: create stream");
         const stream = Readable.from(req.body);
 
         try {
             // upload the part
-            let part = await uploadPart({
-                client: this.s3client,
+            log("request body: upload part");
+            let part = await this.storage.uploadPart({
                 Bucket: metadata.bucket,
                 Key: metadata.filename,
                 uploadId,
@@ -116,8 +88,8 @@ export async function tusPostHandler(req, res) {
             // if we have the whole file then complete the upload
             //   and return 201 with upload offset set to the content length
             if (req.headers["content-length"] === req.headers["upload-length"]) {
-                await completeUpload({
-                    client: this.s3client,
+                log("request body: the part contains the whole file, complete the upload");
+                await this.storage.completeUpload({
                     Bucket: metadata.bucket,
                     Key: metadata.filename,
                     uploadId,
@@ -126,6 +98,9 @@ export async function tusPostHandler(req, res) {
                 headers["upload-offset"] = req.headers["content-length"];
                 return res.code(201).headers(headers).send;
             } else {
+                log(
+                    "request body: the part is not the whole file, update the cache and return 201"
+                );
                 // we got a part but it's not the whole file
                 //   return 201 with upload offset set to the content length we got
                 req.headers["upload-offset"] = req.headers["content-length"];
@@ -186,4 +161,46 @@ function extractUploadMetadata(metadata) {
     if (!metadata.overwrite) metadata.overwrite = false;
 
     return metadata;
+}
+
+function validateRequest(req, res) {
+    // console.log(req.headers);
+    // 'upload-defer-length' is currently not allowed by server options
+    //  enable by setting 'creation-defer-length' on 'tusExtensions' in config.js
+    if (!req.headers["upload-length"] && !req.headers["upload-defer-length"]) {
+        return res.badRequest(
+            `Neither 'upload-length' not 'upload-defer-length' haeders were set. Set one.`
+        );
+    }
+    if (req.headers["upload-length"] && req.headers["upload-defer-length"]) {
+        return res.badRequest(
+            `Both 'upload-length' and 'upload-defer-length' headers were set. Set one only.`
+        );
+    }
+    if (!req.headers["upload-metadata"]) {
+        return res.badRequest(`Required header 'upload-metadata' not set.`);
+    }
+    if (req.headers["upload-defer-length"] && req.headers["upload-defer-length"] !== "1") {
+        return res.badRequest(`'upload-defer-length' header was set but it's not equal to '1'.`);
+    }
+
+    if (parseInt(req.headers["upload-length"]) > maxFileSize) {
+        return res.payloadTooLarge(
+            `The file to be uploaded is greater than the maxium allowable upload size of ${maxFileSize}.`
+        );
+    }
+
+    // if there's something in the body we need to confirm some other headers have been set
+    if (req.body) {
+        if (!req.headers["content-length"])
+            return res.badRequest(`'content-length' header is not set.`);
+        if (!req.headers["upload-length"])
+            return res.badRequest(`'upload-length headers is not set.`);
+        if (!req.headers["content-type"])
+            return res.badRequest(`'content-type' header is not set.`);
+        if (req.headers["content-type"] !== "application/offset+octet-stream")
+            res.unsupportedMediaType(
+                `'content-type' header must be 'application/offset+octet-stream'.`
+            );
+    }
 }
