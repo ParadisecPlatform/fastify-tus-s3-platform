@@ -11,4 +11,4 @@ export const preferredPartSize = 64 * 1024 * 1024;
 export const maximumParts = 10000;
 
 // Supported TUS extensions
-export const tusExtensions = ["creation"];
+export const tusExtensions = "creation";

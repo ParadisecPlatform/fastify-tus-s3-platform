@@ -1,10 +1,10 @@
 import fetch from "cross-fetch";
 import { stat } from "node:fs/promises";
-import { getS3Handle, abortUpload } from "./s3-utils";
+import { Storage } from "./s3-utils";
 
 describe.only(`Test TUS HEAD handling`, () => {
     const Bucket = "repository";
-    let s3client = getS3Handle({
+    let storage = new Storage({
         awsAccessKeyId: "root",
         awsSecretAccessKey: "rootpass",
         forcePathStyle: true,
@@ -46,6 +46,10 @@ describe.only(`Test TUS HEAD handling`, () => {
 
         // now try to get the data about it via a head request
 
-        await abortUpload({ client: s3client, Bucket: "repository", Key: "config.js", uploadId });
+        await storage.abortUpload({
+            Bucket: "repository",
+            Key: "config.js",
+            uploadId,
+        });
     });
 });

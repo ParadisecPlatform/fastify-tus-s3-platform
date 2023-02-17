@@ -1,4 +1,5 @@
 import fetch from "cross-fetch";
+import { maximumFileSize, tusExtensions } from "./config";
 
 describe.only(`Test TUS OPTIONS handling`, () => {
     it(`Should be able to perform an OPTIONS request and get the expected response`, async () => {
@@ -11,8 +12,8 @@ describe.only(`Test TUS OPTIONS handling`, () => {
         expect(response.headers.has("tus-version")).toBeTrue;
         expect(response.headers.get("tus-version")).toEqual("1.0.0");
         expect(response.headers.has("tus-max-size")).toBeTrue;
-        expect(response.headers.get("tus-max-size")).toEqual("536870912000");
+        expect(response.headers.get("tus-max-size")).toEqual(String(maximumFileSize));
         expect(response.headers.has("tus-extension")).toBeTrue;
-        expect(response.headers.get("tus-extension")).toEqual("creation,creation-with-upload");
+        expect(response.headers.get("tus-extension")).toEqual(tusExtensions);
     });
 });

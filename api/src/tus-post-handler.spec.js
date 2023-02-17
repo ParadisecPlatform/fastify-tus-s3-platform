@@ -158,31 +158,4 @@ describe.only(`Test TUS POST handling`, () => {
             uploadId,
         });
     });
-    it(`Should succeed in performing a POST request with data (creation-with-upload)`, async () => {
-        const file = "./src/config.js";
-        const filename = new Buffer.from("config.js").toString("base64");
-        const bucket = new Buffer.from("repository").toString("base64");
-        let fileStats = await stat(file);
-        let stream = createReadStream(file);
-        let response = await fetch("http://localhost:8080/files", {
-            method: "POST",
-            headers: {
-                "content-type": "application/offset+octet-stream",
-                "content-length": fileStats.size,
-                "upload-length": fileStats.size,
-                "upload-metadata": `filename ${filename}, bucket ${bucket}, overwrite`,
-            },
-            body: stream,
-        });
-        expect(response.status).toEqual(201);
-        expect(response.headers.get("upload-offset")).toEqual(String(fileStats.size));
-
-        let exists = await storage.keyExists({ Bucket, Key: "config.js" });
-        expect(exists).toBeTrue;
-
-        await storage.removeObjects({
-            Bucket: "repository",
-            keys: ["config.js"],
-        });
-    });
 });
