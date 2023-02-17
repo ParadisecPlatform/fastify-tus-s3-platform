@@ -1,5 +1,6 @@
 import {
     S3Client,
+    GetObjectCommand,
     HeadBucketCommand,
     HeadObjectCommand,
     AbortMultipartUploadCommand,
@@ -9,6 +10,7 @@ import {
     // ListMultipartUploadsCommand,
     ListPartsCommand,
     DeleteObjectsCommand,
+    PutObjectCommand,
 } from "@aws-sdk/client-s3";
 
 export class Storage {
@@ -40,6 +42,34 @@ export class Storage {
         } catch (error) {
             return false;
         }
+    }
+    async stat(Bucket, Key) {
+        const command = new HeadObjectCommand(Bucket, Key);
+        try {
+            return await this.client.send(command);
+        } catch (error) {
+            return false;
+        }
+    }
+    async downloadFile({ Bucket, Key }) {
+        const command = new GetObjectCommand({ Bucket, Key });
+        let response = await this.client.send(command);
+
+        const chunks = [];
+        for await (let chunk of response.Body) {
+            chunks.push(chunk);
+        }
+        let data = Buffer.concat(chunks).toString();
+        return data;
+    }
+    async uploadFile({ Bucket, Key, stream }) {
+        const command = new PutObjectCommand({
+            Bucket,
+            Key,
+            Body: stream,
+        });
+        let response = await this.client.send(command);
+        return response.$metadata;
     }
     async createUpload({ Bucket, Key }) {
         let command = new CreateMultipartUploadCommand({

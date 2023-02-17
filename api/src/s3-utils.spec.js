@@ -8,6 +8,15 @@ describe(`Test multipart upload components`, () => {
         forcePathStyle: true,
         endpoint: "http://minio:9000",
     });
+    it(`should be able to upload a complete file that's less than 5MB`, async () => {
+        const file = createReadStream("./jest.config.js");
+        const Bucket = "repository";
+        const Key = "jest.config.js";
+        let response = await storage.uploadFile({ Bucket, Key, stream: file });
+        expect(response.httpStatusCode).toEqual(200);
+
+        await storage.removeObjects({ Bucket, keys: ["jest.config.js"] });
+    });
     it("Should be able to perform a multipart upload of a small file - 1 part", async () => {
         const file = createReadStream("./jest.config.js");
         const Bucket = "repository";
