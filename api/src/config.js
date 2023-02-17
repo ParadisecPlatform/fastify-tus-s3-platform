@@ -5,7 +5,7 @@ export const maximumFileSize = 500 * 1024 * 1024;
 export const minimumPartSize = 5 * 1024 * 1024;
 
 // preferred part size = 8MB
-export const preferredPartSize = 8 * 1024 * 1024;
+export const preferredPartSize = 64 * 1024 * 1024;
 
 // maximum number of parts
 export const maximumParts = 10000;
