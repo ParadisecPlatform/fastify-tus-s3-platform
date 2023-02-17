@@ -211,7 +211,6 @@ describe.only(`Test TUS PATCH handling`, () => {
     });
     it("playing with writing out file chunks", async () => {
         const file = "./src/config.js";
-        await remove("./src/test-config.js");
         const fileSize = (await stat(file)).size;
 
         let stream = createReadStream(file, { start: 0, end: 49 });
@@ -226,6 +225,7 @@ describe.only(`Test TUS PATCH handling`, () => {
         for await (let chunk of stream) {
             await writeChunk({ chunk, position: 100 });
         }
+        await remove("./src/test-config.js");
     });
 });
 
