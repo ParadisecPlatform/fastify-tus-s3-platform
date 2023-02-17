@@ -6,9 +6,16 @@ const envToLogger = {
         transport: {
             target: "@fastify/one-line-logger",
         },
+        // transport: {
+        //     target: "pino-pretty",
+        //     options: {
+        //         translateTime: "HH:MM:ss Z",
+        //         ignore: "pid,hostname",
+        //     },
+        // },
     },
 };
-const fastify = Fastify({ logger: envToLogger[process.env.NODE_ENV] });
+const fastify = Fastify({ logger: envToLogger[process.env.NODE_ENV], bodyLimit: 8 * 1024 * 1024 });
 import tusS3Uploader from "./src/index.js";
 
 main();
