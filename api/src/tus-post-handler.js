@@ -1,6 +1,8 @@
 import { Buffer } from "node:buffer";
 import { Readable } from "stream";
-import { maxFileSize } from "./config.js";
+import { maximumFileSize } from "./config.js";
+import path from "path";
+import { remove } from "fs-extra";
 import debug from "debug";
 const log = debug("tus-s3-uploader:POST");
 
@@ -25,10 +27,9 @@ export async function tusPostHandler(req, res) {
     let exists = await this.storage.bucketExists({ Bucket: metadata.bucket });
     if (!exists) return res.notFound(`Bucket '${metadata.bucket}' does not exist in the storage.`);
 
-    // body or not, create the file in the S3 bucket
+    // see if we can create the file in the bucket
     if (!metadata.overwrite) {
         log(`ensure file doesn't exist as 'overwrite = false'`);
-        // check if the target file exists - abort if it does
         let exists = await this.storage.keyExists({
             Bucket: metadata.bucket,
             Key: metadata.filename,
@@ -38,6 +39,7 @@ export async function tusPostHandler(req, res) {
                 `The file exists and 'overwrite true' was not specified in the 'upload-metadata' header`
             );
     }
+    const fileSize = parseInt(req.headers["upload-length"]);
 
     // create the file upload
     log("create the multipart object in the storage");
@@ -46,6 +48,10 @@ export async function tusPostHandler(req, res) {
         Key: metadata.filename,
     });
 
+    // if we have an existing cache file - remove it
+    const cacheFile = path.join(this.cache.basePath, uploadId);
+    await remove(cacheFile);
+
     const host = `${req.protocol}://${req.hostname}${req.url}`;
     const location = `${host}/${uploadId}`;
     const headers = {
@@ -53,77 +59,16 @@ export async function tusPostHandler(req, res) {
         "Tus-Resumable": "1.0.0",
     };
 
-    if (!req.body) {
-        log("no request body: update the cache and return 201");
-        // no request body so this is a basic creation, not creation with upload
+    // cache the uploadId for subsequent patch requests
+    await this.cache.set(uploadId, {
+        fileSize,
+        metadata,
+        bytesUploadedToServer: 0,
+        parts: [],
+    });
 
-        // cache the uploadId for subsequent patch requests
-        await this.cache.set(uploadId, {
-            uploadLength: parseInt(req.headers["upload-length"]),
-            latestUploadOffset: parseInt(req.headers["content-length"]),
-            latestPartNumber: 0,
-            metadata,
-        });
-
-        headers["upload-offset"] = 0;
-        return res.code(201).headers(headers).send();
-    }
-
-    // if there is a request body, then upload it
-    if (req.body) {
-        log("request body: create stream");
-        const stream = Readable.from(req.body);
-
-        try {
-            // upload the part
-            log("request body: upload part");
-            let part = await this.storage.uploadPart({
-                Bucket: metadata.bucket,
-                Key: metadata.filename,
-                uploadId,
-                partNumber: 1,
-                stream: stream.read(),
-            });
-
-            // if we have the whole file then complete the upload
-            //   and return 201 with upload offset set to the content length
-            if (req.headers["content-length"] === req.headers["upload-length"]) {
-                log("request body: the part contains the whole file, complete the upload");
-                await this.storage.completeUpload({
-                    Bucket: metadata.bucket,
-                    Key: metadata.filename,
-                    uploadId,
-                    parts: [part],
-                });
-                headers["upload-offset"] = req.headers["content-length"];
-                return res.code(201).headers(headers).send;
-            } else {
-                log(
-                    "request body: the part is not the whole file, update the cache and return 201"
-                );
-                // we got a part but it's not the whole file
-                //   return 201 with upload offset set to the content length we got
-                req.headers["upload-offset"] = req.headers["content-length"];
-
-                // cache the uploadId and part for subsequent patch requests
-                await this.cache.set(uploadId, {
-                    uploadLength: parseInt(req.headers["upload-length"]),
-                    latestUploadOffset: parseInt(req.headers["content-length"]),
-                    latestPartNumber: 1,
-                    metadata,
-                    byUploadOffset: {
-                        [req.headers["content-length"]]: part,
-                    },
-                    byPartNumber: {
-                        1: part,
-                    },
-                });
-                res.code(201).headers(headers).send();
-            }
-        } catch (error) {
-            return res.badRequest();
-        }
-    }
+    headers["upload-offset"] = 0;
+    return res.code(201).headers(headers).send();
 }
 
 function extractUploadMetadata(metadata) {
@@ -184,9 +129,9 @@ function validateRequest(req, res) {
         return res.badRequest(`'upload-defer-length' header was set but it's not equal to '1'.`);
     }
 
-    if (parseInt(req.headers["upload-length"]) > maxFileSize) {
+    if (parseInt(req.headers["upload-length"]) > maximumFileSize) {
         return res.payloadTooLarge(
-            `The file to be uploaded is greater than the maxium allowable upload size of ${maxFileSize}.`
+            `The file to be uploaded is greater than the maxium allowable upload size of ${maximumFileSize}.`
         );
     }
 
