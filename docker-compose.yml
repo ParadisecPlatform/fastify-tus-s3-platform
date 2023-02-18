@@ -55,6 +55,8 @@ services:
             - ui_node_modules:/srv/ui/node_modules:delegated
             - ./ui:/srv/ui:delegated
         working_dir: /srv/ui
-        command: [ "npm", "run", "test:watch" ]
+        command: [ "npm", "run", "develop" ]
+        ports:
+            - 9000:9000
 
 
