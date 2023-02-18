@@ -15,7 +15,10 @@ const envToLogger = {
         // },
     },
 };
-const fastify = Fastify({ logger: envToLogger[process.env.NODE_ENV], bodyLimit: 8 * 1024 * 1024 });
+const fastify = Fastify({
+    logger: envToLogger[process.env.NODE_ENV],
+    bodyLimit: 256 * 1024 * 1024,
+});
 import tusS3Uploader from "./src/index.js";
 
 main();
