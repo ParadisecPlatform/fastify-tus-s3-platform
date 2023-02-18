@@ -59,7 +59,7 @@ export class Storage {
         for await (let chunk of response.Body) {
             chunks.push(chunk);
         }
-        let data = Buffer.concat(chunks).toString();
+        let data = Buffer.concat(chunks);
         return data;
     }
     async uploadFile({ Bucket, Key, stream }) {
