@@ -43,10 +43,19 @@ export async function tusPatchHandler(req, res) {
 
     const cacheFile = path.join(this.cache.basePath, uploadId);
     log("Saving the chunk to the cache file");
-    let fd = await open(cacheFile, "a+");
-    await nodeWrite(fd, req.body);
-    await close(fd);
-    uploadData.bytesUploadedToServer += contentLength;
+    try {
+        let fd = await open(cacheFile, "a+");
+        await nodeWrite(fd, req.body);
+        await close(fd);
+        uploadData.bytesUploadedToServer += contentLength;
+    } catch (error) {
+        console.error(`Error saving the uploaded chunk to the cache file`);
+        console.error(error);
+
+        // send bad request and let tus retry
+        res.code(400).send();
+        return;
+    }
 
     let cacheFileSize = (await stat(cacheFile)).size;
     log("Cache file size", cacheFileSize);
@@ -58,38 +67,54 @@ export async function tusPatchHandler(req, res) {
      *  the remainder is left in the cacheFile until the buffer
      *  is full again.
      */
-    if (cacheFileSize >= optimalPartSize && uploadData.bytesUploadedToServer !== fileSize) {
-        log("uploading part to S3");
-        const parts = uploadData.parts;
-        const partNumber = parts.slice(-1).length ? parts.slice(-1)[0].PartNumber + 1 : 1;
-        let stream = createReadStream(cacheFile, { start: 0, end: optimalPartSize });
-        const part = await uploadPart.bind(this)({
-            metadata,
-            uploadId,
-            partNumber,
-            stream,
-        });
-        log("part uploaded to S3");
-        uploadData.parts.push(part);
+    if (uploadData.bytesUploadedToServer !== fileSize) {
+        while (cacheFileSize >= optimalPartSize) {
+            log("uploading part to S3");
+            let stream, partNumber, part;
+            try {
+                const parts = uploadData.parts;
+                partNumber = parts.slice(-1).length ? parts.slice(-1)[0].PartNumber + 1 : 1;
+                stream = createReadStream(cacheFile, {
+                    highWaterMark: optimalPartSize,
+                });
 
-        // remove the uploaded bit from the cache file so that it's ready
-        //  for more to be added via subsequent PATCH requests
+                part = await uploadPart.bind(this)({
+                    metadata,
+                    uploadId,
+                    partNumber,
+                    stream,
+                });
 
-        // read the cacheFile content into memory
-        let fd = await open(cacheFile, "r");
-        let data = await readFile(fd);
-        await close(fd);
+                log("part uploaded to S3");
+                uploadData.parts.push(part);
 
-        // remove the file
-        await remove(cacheFile);
+                // remove the uploaded bit from the cache file so that it's ready
+                //  for more to be added via subsequent PATCH requests
 
-        // write out the leftover from optimalPartSize to the end
-        // (that is, the first bit up to optimalPartSize is thrown away
-        //  and the rest is written back into the cachefile for next time)
-        fd = await open(cacheFile, "w+");
-        await nodeWrite(fd, data.subarray(optimalPartSize));
-        await close(fd);
-        log("upload data", uploadData);
+                // read the cacheFile content into memory
+                let fd = await open(cacheFile, "r");
+                let data = await readFile(fd);
+                await close(fd);
+
+                // remove the file
+                await remove(cacheFile);
+
+                // write out the leftover from optimalPartSize to the end
+                // (that is, the first bit up to optimalPartSize is thrown away
+                //  and the rest is written back into the cachefile for next time)
+                fd = await open(cacheFile, "w+");
+                await nodeWrite(fd, data.subarray(optimalPartSize));
+                await close(fd);
+
+                cacheFileSize = (await stat(cacheFile)).size ?? 0;
+                // log("upload data", uploadData);
+            } catch (error) {
+                console.error(`Error uploading a part to S3`);
+                console.error(error);
+                res.code(400).send();
+                return;
+            }
+        }
     }
 
     /**
@@ -98,18 +123,25 @@ export async function tusPatchHandler(req, res) {
      */
     if (uploadData.bytesUploadedToServer === fileSize) {
         log("uploading part to S3");
-        const parts = uploadData.parts;
-        const partNumber = parts.slice(-1).length ? parts.slice(-1)[0].PartNumber + 1 : 1;
-        let stream = createReadStream(cacheFile, { start: 0 });
-        const part = await uploadPart.bind(this)({
-            metadata,
-            uploadId,
-            partNumber,
-            stream,
-        });
-        log("part uploaded to S3");
-        uploadData.parts.push(part);
-        log("upload data", uploadData);
+        try {
+            const parts = uploadData.parts;
+            const partNumber = parts.slice(-1).length ? parts.slice(-1)[0].PartNumber + 1 : 1;
+            let stream = createReadStream(cacheFile, { start: 0 });
+            const part = await uploadPart.bind(this)({
+                metadata,
+                uploadId,
+                partNumber,
+                stream,
+            });
+            log("part uploaded to S3");
+            uploadData.parts.push(part);
+            log("upload data", uploadData);
+        } catch (error) {
+            console.error(`Error uploading the final part to S3`);
+            console.error(error);
+            res.code(400).send();
+            return;
+        }
     }
     await this.cache.set(uploadId, uploadData);
 
@@ -120,13 +152,19 @@ export async function tusPatchHandler(req, res) {
 
     if (uploadOffset + contentLength === fileSize) {
         // we have the full file so complete the upload in S3
-        log("Complete the multipart upload to S3");
-        const parts = uploadData.parts;
-        await completeUpload.bind(this)({ metadata, uploadId, parts });
-        await remove(cacheFile);
-        await this.cache.remove(uploadId);
-
-        headers["upload-offset"] = fileSize;
+        try {
+            log("Complete the multipart upload to S3");
+            const parts = uploadData.parts;
+            await completeUpload.bind(this)({ metadata, uploadId, parts });
+            await remove(cacheFile);
+            await this.cache.remove(uploadId);
+            headers["upload-offset"] = fileSize;
+        } catch (error) {
+            console.error(`Error completing the S3 multipart upload`);
+            console.error(error);
+            res.code(400).send();
+            return;
+        }
     }
     res.code(204).headers(headers).send();
     log("");
