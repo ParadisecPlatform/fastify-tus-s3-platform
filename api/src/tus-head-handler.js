@@ -3,8 +3,6 @@ export async function tusHeadHandler(req, res) {
     let uploadData = await this.cache.get(uploadId);
     if (!uploadData) return res.notFound();
 
-    console.log(uploadData);
-
     const headers = {
         "Tus-Resumable": "1.0.0",
         "Upload-Offset": parseInt(uploadData.bytesUploadedToServer),
