@@ -1,6 +1,5 @@
 import fetch from "cross-fetch";
 import { createReadStream } from "node:fs";
-import { Readable } from "node:stream";
 import { Storage } from "./s3-utils";
 import fsExtraPkg from "fs-extra";
 const { stat, open, close, write, remove, readFile, pathExists } = fsExtraPkg;
@@ -138,14 +137,14 @@ describe.only(`Test TUS PATCH handling`, () => {
         expect(s3FileStat.ContentLength).toEqual(fileSize);
 
         let uploadedFile = await storage.downloadFile({
-            Bucket: "repository",
+            Bucket,
             Key: filename,
         });
         let originalFile = await readFile(file);
         expect(uploadedFile).toEqual(originalFile.toString());
 
         await storage.removeObjects({
-            Bucket: "repository",
+            Bucket,
             keys: [filename],
         });
     });
@@ -179,15 +178,15 @@ describe.only(`Test TUS PATCH handling`, () => {
             keys: [filename],
         });
     });
-    it(`Should succeed in uploading a 50MB file`, async () => {
-        const file = "./test-files/50mb.txt";
+    it(`Should succeed in uploading a 100MB file`, async () => {
+        const file = "./test-files/100mb.txt";
         if (!(await pathExists(file))) {
             console.log(
-                `Create this test file to run this test: 'dd if=/dev/zero of=api/test-files/50mb.txt bs=1024 count=50000'`
+                `Create this test file to run this test: 'dd if=/dev/zero of=api/test-files/100mb.txt bs=1024 count=100000'`
             );
             return;
         }
-        const filename = "50mb.txt";
+        const filename = "100mb.txt";
         const fileSize = (await stat(file)).size;
         await uploadFile({ file, filename, chunkSize: 8 * 1024 * 1024 });
 
@@ -198,7 +197,7 @@ describe.only(`Test TUS PATCH handling`, () => {
         expect(s3FileStat.ContentLength).toEqual(fileSize);
 
         let uploadedFile = await storage.downloadFile({
-            Bucket: "repository",
+            Bucket,
             Key: filename,
         });
         let originalFile = await readFile(file);
