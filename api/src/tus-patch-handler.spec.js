@@ -111,7 +111,7 @@ describe.only(`Test TUS PATCH handling`, () => {
             Key: filename,
         });
         let originalFile = await readFile(file);
-        expect(uploadedFile).toEqual(originalFile.toString());
+        expect(uploadedFile.toString()).toEqual(originalFile.toString());
 
         await storage.removeObjects({
             Bucket: "repository",
@@ -141,7 +141,7 @@ describe.only(`Test TUS PATCH handling`, () => {
             Key: filename,
         });
         let originalFile = await readFile(file);
-        expect(uploadedFile).toEqual(originalFile.toString());
+        expect(uploadedFile.toString()).toEqual(originalFile.toString());
 
         await storage.removeObjects({
             Bucket,
@@ -171,7 +171,7 @@ describe.only(`Test TUS PATCH handling`, () => {
             Key: filename,
         });
         let originalFile = await readFile(file);
-        expect(uploadedFile).toEqual(originalFile.toString());
+        expect(uploadedFile.toString()).toEqual(originalFile.toString());
 
         await storage.removeObjects({
             Bucket: "repository",
@@ -201,7 +201,7 @@ describe.only(`Test TUS PATCH handling`, () => {
             Key: filename,
         });
         let originalFile = await readFile(file);
-        expect(uploadedFile).toEqual(originalFile.toString());
+        expect(uploadedFile.toString()).toEqual(originalFile.toString());
 
         await storage.removeObjects({
             Bucket: "repository",
