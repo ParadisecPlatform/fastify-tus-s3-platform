@@ -37,7 +37,7 @@ export async function tusPatchHandler(req, res) {
     const optimalPartSize = calculateOptimalPartSize(fileSize);
 
     log("File Size", fileSize);
-    log("Optimal part size for upload to S3", optimalPartSize);
+    log("Optimal part size for upload to S3", `${optimalPartSize / 1024} MB`);
     log("Upload Offset", uploadOffset);
     log("Content Length", contentLength);
 
@@ -49,6 +49,7 @@ export async function tusPatchHandler(req, res) {
     uploadData.bytesUploadedToServer += contentLength;
 
     let cacheFileSize = (await stat(cacheFile)).size;
+    log("Cache file size", cacheFileSize);
 
     /**
      * Once the cache file has reached the optimalPartSize
