@@ -1,5 +1,5 @@
 // 500GB max file size
-export const maximumFileSize = 500 * 1024 * 1024;
+export const maximumFileSize = 500 * 1024 * 1024 * 1024;
 
 // minimum part size = 5MB
 export const minimumPartSize = 5 * 1024 * 1024;
