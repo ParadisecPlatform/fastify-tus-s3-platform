@@ -35,9 +35,6 @@ async function main() {
         routes.push(route);
     });
     await fastify.register(cors, {
-        // origin: (origin, cb) => {
-        //     cb(origin, true);
-        // },
         origin: "*",
         methods: ["OPTIONS", "GET", "HEAD", "PATCH", "POST"],
         allowedHeaders: [
@@ -45,6 +42,7 @@ async function main() {
             "upload-length",
             "content-length",
             "upload-offset",
+            "upload-expires",
             "location",
             "upload-metadata",
             "tus-resumable",
@@ -57,6 +55,7 @@ async function main() {
             "upload-length",
             "content-length",
             "upload-offset",
+            "upload-expires",
             "location",
             "upload-metadata",
             "tus-resumable",

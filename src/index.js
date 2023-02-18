@@ -19,12 +19,17 @@ function tusS3Uploader(fastify, opts, done) {
         return next();
     }
     // set some defaults
+    // https://date-fns.org/v2.29.3/docs/add
+    const defaultUploadExpiration = opts.defaultUploadExpiration ?? { hours: 6 };
     const uploadRoutePath = opts.uploadRoutePath ?? "/files";
     const cachePath = opts.cachePath ?? "./.cache";
 
     log({ ...opts, uploadRoutePath, cachePath });
 
     fastify.addHook("onReady", async () => {
+        // set default expiration time for all uploads
+        fastify.decorate("defaultUploadExpiration", defaultUploadExpiration);
+
         // attach a cache object to the fastify instance when it's ready
         const cache = new Cache({
             basePath: cachePath,

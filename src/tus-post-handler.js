@@ -3,6 +3,7 @@ import { Readable } from "stream";
 import { maximumFileSize } from "./config.js";
 import path from "path";
 import { remove } from "fs-extra";
+import { add } from "date-fns";
 import debug from "debug";
 const log = debug("tus-s3-uploader:POST");
 
@@ -54,9 +55,12 @@ export async function tusPostHandler(req, res) {
 
     const host = `${req.protocol}://${req.hostname}${req.url}`;
     const location = `${host}/${uploadId}`;
+    const uploadExpires = add(new Date(), this.defaultUploadExpiration);
     const headers = {
         location,
         "Tus-Resumable": "1.0.0",
+        "Upload-Expires": uploadExpires,
+        "upload-offset": 0,
     };
 
     // cache the uploadId for subsequent patch requests
@@ -64,10 +68,10 @@ export async function tusPostHandler(req, res) {
         fileSize,
         metadata,
         bytesUploadedToServer: 0,
+        uploadExpires,
         parts: [],
     });
 
-    headers["upload-offset"] = 0;
     return res.code(201).headers(headers).send();
 }
 

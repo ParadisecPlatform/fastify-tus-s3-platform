@@ -5,6 +5,7 @@ import fsExtraPkg from "fs-extra";
 const { stat, remove, createReadStream, createWriteStream } = fsExtraPkg;
 import { pipeline } from "node:stream/promises";
 import { preferredPartSize, maximumParts } from "./config.js";
+import { isAfter, parseISO } from "date-fns";
 const log = debug("tus-s3-uploader:PATCH");
 
 export async function tusPatchHandler(req, res) {
@@ -22,18 +23,27 @@ export async function tusPatchHandler(req, res) {
     if (result) return;
 
     // const parts = Object.keys(uploadData.byPartNumber).map((part) => uploadData.byPartNumber[part]);
+    const cacheFile = path.join(this.cache.basePath, uploadId);
     const contentLength = parseInt(req.headers["content-length"]);
     const uploadOffset = parseInt(req.headers["upload-offset"]);
     const fileSize = uploadData.fileSize;
     const metadata = uploadData.metadata;
     const optimalPartSize = calculateOptimalPartSize(fileSize);
 
+    // has the upload expired?
+    if (isAfter(new Date(), parseISO(uploadData.uploadExpires))) {
+        log("The upload has expired. Removing the cache file and cache entry");
+        await remove(cacheFile);
+        await this.cache.remove(uploadId);
+        res.gone();
+        return;
+    }
+
     log("File Size", fileSize);
     log("Optimal part size for upload to S3", `${optimalPartSize / 1024} MB`);
     log("Upload Offset", uploadOffset);
     log("Content Length", contentLength);
 
-    const cacheFile = path.join(this.cache.basePath, uploadId);
     log("Saving the chunk to the cache file");
     try {
         // write the req.body to the cache file

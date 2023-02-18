@@ -22,6 +22,7 @@
         "@fastify/sensible": "^5.2.0",
         "@paralleldrive/cuid2": "^2.0.1",
         "cross-fetch": "^3.1.5",
+        "date-fns": "^2.29.3",
         "fastify": "^4.12.0",
         "fastify-plugin": "^4.5.0",
         "file-system-cache": "^2.0.2",
