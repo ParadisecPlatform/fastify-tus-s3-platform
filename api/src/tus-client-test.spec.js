@@ -13,7 +13,7 @@ describe(`Test TUS uploads using tus js client`, () => {
         forcePathStyle: true,
         endpoint: "http://minio:9000",
     });
-    it.only(`Should be able to upload a 1MB file using the TUS JS client`, async () => {
+    it(`Should be able to upload a 1MB file using the TUS JS client`, async () => {
         const file = "./test-files/1mb.txt";
         const filename = "1mb.txt";
         const stream = createReadStream(file);
@@ -124,80 +124,6 @@ describe(`Test TUS uploads using tus js client`, () => {
             keys: [filename],
         });
     });
-    it(`Should be able to upload a 1GB file using the TUS JS client`, async () => {
-        const file = "./test-files/1gb.txt";
-        const filename = "1gb.txt";
-        const stream = createReadStream(file);
-        if (!(await pathExists(file))) {
-            console.log(
-                `Create this test file to run this test: 'dd if=/dev/zero of=api/test-files/1gb.txt bs=1024 count=1000000'`
-            );
-            return;
-        }
-        const metadata = {
-            filename,
-            bucket: Bucket,
-            overwrite: true,
-        };
-        await TusUpload({ endpoint, stream, metadata, quiet: false });
-
-        // verify the uploaded file
-        const fileSize = (await stat(file)).size;
-        let exists = await storage.keyExists({ Bucket, Key: filename });
-        expect(exists).toBeTrue;
-
-        let s3FileStat = await storage.stat({ Bucket, Key: filename });
-        expect(s3FileStat.ContentLength).toEqual(fileSize);
-
-        // let uploadedFile = await storage.downloadFile({
-        //     Bucket,
-        //     Key: filename,
-        // });
-        // let originalFile = await readFile(file);
-        // expect(uploadedFile).toEqual(originalFile.toString());
-
-        // await storage.removeObjects({
-        //     Bucket,
-        //     keys: [filename],
-        // });
-    }, 10000);
-    it.only(`Should be able to upload a 10GB file using the TUS JS client`, async () => {
-        const file = "./test-files/10gb.txt";
-        const filename = "10gb.txt";
-        const stream = createReadStream(file);
-        if (!(await pathExists(file))) {
-            console.log(
-                `Create this test file to run this test: 'dd if=/dev/zero of=api/test-files/10gb.txt bs=1024 count=10000000'`
-            );
-            return;
-        }
-        const metadata = {
-            filename,
-            bucket: Bucket,
-            overwrite: true,
-        };
-        await TusUpload({ endpoint, stream, metadata, quiet: false });
-
-        // verify the uploaded file
-        const fileSize = (await stat(file)).size;
-        let exists = await storage.keyExists({ Bucket, Key: filename });
-        expect(exists).toBeTrue;
-
-        let s3FileStat = await storage.stat({ Bucket, Key: filename });
-        expect(s3FileStat.ContentLength).toEqual(fileSize);
-
-        // let uploadedFile = await storage.downloadFile({
-        //     Bucket,
-        //     Key: filename,
-        // });
-        // let originalFile = await readFile(file);
-        // expect(uploadedFile).toEqual(originalFile.toString());
-
-        // await storage.removeObjects({
-        //     Bucket,
-        //     keys: [filename],
-        // });
-    }, 1200000);
 });
 
 function TusUpload({ endpoint, stream, metadata, quiet = false }) {
