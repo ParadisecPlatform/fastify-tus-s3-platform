@@ -1,7 +1,7 @@
 import fetch from "cross-fetch";
 import { maximumFileSize, tusExtensions } from "./config";
 
-describe.only(`Test TUS OPTIONS handling`, () => {
+describe(`Test TUS OPTIONS handling`, () => {
     it(`Should be able to perform an OPTIONS request and get the expected response`, async () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "OPTIONS",
