@@ -38,6 +38,7 @@ services:
         volumes:
             - api_node_modules:/srv/api/node_modules:delegated
             - ./api:/srv/api:delegated
+            - ./src:/srv/api/src:delegated
         working_dir: /srv/api
         command:
             [ "npm", "run","develop" ]

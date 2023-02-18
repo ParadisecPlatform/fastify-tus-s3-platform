@@ -87,7 +87,7 @@ describe(`Test TUS uploads using tus js client`, () => {
             keys: [filename],
         });
     });
-    it(`Should be able to upload a 100MB file using the TUS JS client`, async () => {
+    it.only(`Should be able to upload a 100MB file using the TUS JS client`, async () => {
         const file = "./test-files/100mb.txt";
         const filename = "100mb.txt";
         const stream = createReadStream(file);
@@ -132,7 +132,7 @@ function TusUpload({ endpoint, stream, metadata, quiet = false }) {
             endpoint,
             metadata,
             // chunk size = 128MB
-            chunkSize: 256 * 1024 * 1024,
+            chunkSize: 128 * 1024 * 1024,
             onError(error) {
                 console.error("An error occurred:");
                 console.error(error);

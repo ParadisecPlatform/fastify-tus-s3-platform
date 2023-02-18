@@ -2,17 +2,9 @@ import { Readable } from "stream";
 import debug from "debug";
 import path from "node:path";
 import fsExtraPkg from "fs-extra";
-const {
-    stat,
-    open,
-    close,
-    write: nodeWrite,
-    readFile,
-    remove,
-    pathExists,
-    createReadStream,
-} = fsExtraPkg;
-import { minimumPartSize, preferredPartSize, maximumParts } from "./config.js";
+const { stat, remove, createReadStream, createWriteStream } = fsExtraPkg;
+import { pipeline } from "node:stream/promises";
+import { preferredPartSize, maximumParts } from "./config.js";
 const log = debug("tus-s3-uploader:PATCH");
 
 export async function tusPatchHandler(req, res) {
@@ -44,9 +36,8 @@ export async function tusPatchHandler(req, res) {
     const cacheFile = path.join(this.cache.basePath, uploadId);
     log("Saving the chunk to the cache file");
     try {
-        let fd = await open(cacheFile, "a+");
-        await nodeWrite(fd, req.body);
-        await close(fd);
+        // write the req.body to the cache file
+        await pipeline(Readable.from(req.body), createWriteStream(cacheFile, { flags: "a+" }));
         uploadData.bytesUploadedToServer += contentLength;
     } catch (error) {
         console.error(`Error saving the uploaded chunk to the cache file`);
@@ -64,21 +55,23 @@ export async function tusPatchHandler(req, res) {
      * Once the cache file has reached the optimalPartSize
      *  upload that part to s3. Note that S3 requires each part
      *  to be the same size so only that amount is uploaded and
-     *  the remainder is left in the cacheFile until the buffer
-     *  is full again.
+     *  the remainder is left in the cacheFile until the cacheFile
+     *  has reached the minimum size again
      */
-    if (uploadData.bytesUploadedToServer !== fileSize) {
+    if (uploadData.bytesUploadedToServer < fileSize) {
         while (cacheFileSize >= optimalPartSize) {
             log("uploading part to S3");
-            let stream, partNumber, part;
             try {
                 const parts = uploadData.parts;
-                partNumber = parts.slice(-1).length ? parts.slice(-1)[0].PartNumber + 1 : 1;
-                stream = createReadStream(cacheFile, {
+                let partNumber = parts.slice(-1).length ? parts.slice(-1)[0].PartNumber + 1 : 1;
+
+                let stream = createReadStream(cacheFile, {
+                    start: 0,
+                    end: optimalPartSize,
                     highWaterMark: optimalPartSize,
                 });
 
-                part = await uploadPart.bind(this)({
+                let part = await uploadPart.bind(this)({
                     metadata,
                     uploadId,
                     partNumber,
@@ -88,26 +81,17 @@ export async function tusPatchHandler(req, res) {
                 log("part uploaded to S3");
                 uploadData.parts.push(part);
 
-                // remove the uploaded bit from the cache file so that it's ready
-                //  for more to be added via subsequent PATCH requests
-
-                // read the cacheFile content into memory
-                let fd = await open(cacheFile, "r");
-                let data = await readFile(fd);
-                await close(fd);
-
-                // remove the file
-                await remove(cacheFile);
-
-                // write out the leftover from optimalPartSize to the end
+                // write the leftover from optimalPartSize to the end back to the cacheFile
                 // (that is, the first bit up to optimalPartSize is thrown away
                 //  and the rest is written back into the cachefile for next time)
-                fd = await open(cacheFile, "w+");
-                await nodeWrite(fd, data.subarray(optimalPartSize));
-                await close(fd);
+                await pipeline(
+                    createReadStream(cacheFile, {
+                        start: optimalPartSize,
+                    }),
+                    createWriteStream(cacheFile)
+                );
 
                 cacheFileSize = (await stat(cacheFile)).size ?? 0;
-                // log("upload data", uploadData);
             } catch (error) {
                 console.error(`Error uploading a part to S3`);
                 console.error(error);
@@ -115,13 +99,11 @@ export async function tusPatchHandler(req, res) {
                 return;
             }
         }
-    }
-
-    /**
-     * When we've received all of the file data, upload the final part.
-     *  S3 allows this to be smaller than the other parts.
-     */
-    if (uploadData.bytesUploadedToServer === fileSize) {
+    } else if (uploadData.bytesUploadedToServer === fileSize) {
+        /**
+         * When we've received all of the file data, upload the final part.
+         *  S3 allows this to be smaller than the other parts.
+         */
         log("uploading part to S3");
         try {
             const parts = uploadData.parts;
@@ -156,6 +138,7 @@ export async function tusPatchHandler(req, res) {
             log("Complete the multipart upload to S3");
             const parts = uploadData.parts;
             await completeUpload.bind(this)({ metadata, uploadId, parts });
+            log("Removing the cache file and cache entry");
             await remove(cacheFile);
             await this.cache.remove(uploadId);
             headers["upload-offset"] = fileSize;
@@ -202,6 +185,10 @@ async function completeUpload({ metadata, uploadId, parts }) {
     });
 }
 
+/**
+ *  From https://github.com/tus/tus-node-server/blob/main/packages/s3-store/index.ts#L367
+ *   Why reinvent the wheel when someone else has done such a great job!
+ */
 function calculateOptimalPartSize(size) {
     let optimalPartSize;
 
