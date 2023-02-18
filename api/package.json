@@ -26,7 +26,8 @@
         "fastify-plugin": "^4.5.0",
         "file-system-cache": "^2.0.2",
         "fs-extra": "^11.1.0",
-        "nodemon": "^2.0.20"
+        "nodemon": "^2.0.20",
+        "tus-js-client": "^3.1.0"
     },
     "devDependencies": {
         "debug": "^4.3.4",
