@@ -6,7 +6,7 @@ import { Storage } from "./s3-utils";
 
 describe.only(`Test TUS POST handling`, () => {
     const Bucket = "repository";
-    let storage = new Storage({
+    const storage = new Storage({
         awsAccessKeyId: "root",
         awsSecretAccessKey: "rootpass",
         forcePathStyle: true,
