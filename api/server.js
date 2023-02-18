@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import fastifyCompress from "@fastify/compress";
 import fastifySensible from "@fastify/sensible";
+import cors from "@fastify/cors";
 const envToLogger = {
     development: {
         transport: {
@@ -32,6 +33,37 @@ async function main() {
     const routes = [];
     fastify.addHook("onRoute", (route) => {
         routes.push(route);
+    });
+    await fastify.register(cors, {
+        // origin: (origin, cb) => {
+        //     cb(origin, true);
+        // },
+        origin: "*",
+        methods: ["OPTIONS", "GET", "HEAD", "PATCH", "POST"],
+        allowedHeaders: [
+            "content-type",
+            "upload-length",
+            "content-length",
+            "upload-offset",
+            "location",
+            "upload-metadata",
+            "tus-resumable",
+            "tus-version",
+            "tus-max-size",
+            "tus-extension",
+        ],
+        exposedHeaders: [
+            "content-type",
+            "upload-length",
+            "content-length",
+            "upload-offset",
+            "location",
+            "upload-metadata",
+            "tus-resumable",
+            "tus-version",
+            "tus-max-size",
+            "tus-extension",
+        ],
     });
     fastify.register(fastifySensible);
     fastify.register(fastifyCompress);
