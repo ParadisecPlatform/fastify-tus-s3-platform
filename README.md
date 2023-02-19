@@ -2,6 +2,7 @@
 
 - [Fastify plugin for TUS uploads direct to S3](#fastify-plugin-for-tus-uploads-direct-to-s3)
   - [Install](#install)
+  - [Example Usage](#example-usage)
   - [Use it in your fastify server](#use-it-in-your-fastify-server)
     - [CORS](#cors)
     - [Setting max body size on the fastify instance](#setting-max-body-size-on-the-fastify-instance)
@@ -16,6 +17,13 @@ This plugins adds support for TUS uploads that are sent directly to S3 as multi 
 ```
 npm install -i @paradisec-platform/fastify-tus-s3-plugin
 ```
+
+## Example Usage
+
+-   To see an example of how to use it from nodejs go to
+    [./src/tus-client-test.spec.js](./src/tus-client-test.spec.js)
+-   To see an example of how to use it with Uppy inside a VueJS app:
+    [./ui/sc/App.vue](./ui/src/App.vue)
 
 ## Use it in your fastify server
 
