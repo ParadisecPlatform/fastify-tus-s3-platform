@@ -6,6 +6,7 @@ export async function tusHeadHandler(req, res) {
     const headers = {
         "Tus-Resumable": "1.0.0",
         "Upload-Offset": parseInt(uploadData.bytesUploadedToServer),
+        "Cache-Control": "no-store",
     };
     res.code(200).headers(headers).send();
 }
