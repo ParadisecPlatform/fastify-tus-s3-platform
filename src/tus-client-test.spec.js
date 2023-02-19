@@ -87,7 +87,7 @@ describe(`Test TUS uploads using tus js client`, () => {
             keys: [filename],
         });
     });
-    it.only(`Should be able to upload a 100MB file using the TUS JS client`, async () => {
+    it(`Should be able to upload a 100MB file using the TUS JS client`, async () => {
         const file = "./test-files/100mb.txt";
         const filename = "100mb.txt";
         const stream = createReadStream(file);

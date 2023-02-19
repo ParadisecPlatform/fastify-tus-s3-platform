@@ -20,7 +20,6 @@ function tusS3Uploader(fastify, opts, done) {
         return next();
     }
     // set some defaults
-    // https://date-fns.org/v2.29.3/docs/add
     const defaultUploadExpiration = opts.defaultUploadExpiration ?? { hours: 6 };
     const uploadRoutePath = opts.uploadRoutePath ?? "/files";
     const cachePath = opts.cachePath ?? "./.cache";
