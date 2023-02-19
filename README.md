@@ -4,6 +4,7 @@
   - [Install](#install)
   - [Example Usage](#example-usage)
   - [Use it in your fastify server](#use-it-in-your-fastify-server)
+  - [Supported TUS extensions](#supported-tus-extensions)
     - [CORS](#cors)
     - [Setting max body size on the fastify instance](#setting-max-body-size-on-the-fastify-instance)
     - [Plugin configuration options.](#plugin-configuration-options)
@@ -48,6 +49,10 @@ fastify.register(tusS3Uploader, {
     defaultUploadExpiration: { hours: 6 },
 });
 ```
+
+## Supported TUS extensions
+
+This plugin implements the `creation`, `expiration` and `termination` tus extensions.
 
 ### CORS
 
