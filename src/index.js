@@ -4,6 +4,7 @@ import { tusHeadHandler } from "./tus-head-handler.js";
 import { tusOptionsHandler } from "./tus-options-handler.js";
 import { tusPostHandler } from "./tus-post-handler.js";
 import { tusPatchHandler } from "./tus-patch-handler.js";
+import { tusDeleteHandler } from "./tus-delete-handler.js";
 import { FileSystemCache as Cache } from "file-system-cache";
 import debug from "debug";
 const log = debug("tus-s3-uploader:PLUGIN SETUP");
@@ -60,6 +61,7 @@ function tusS3Uploader(fastify, opts, done) {
     fastify.options(`${uploadRoutePath}`, tusOptionsHandler);
     fastify.post(`${uploadRoutePath}`, tusPostHandler);
     fastify.patch(`${uploadRoutePath}/:uploadId`, tusPatchHandler);
+    fastify.delete(`${uploadRoutePath}/:uploadId`, tusDeleteHandler);
     done();
 }
 export default fp(tusS3Uploader);
