@@ -36,7 +36,7 @@ async function main() {
     });
     await fastify.register(cors, {
         origin: "*",
-        methods: ["OPTIONS", "GET", "HEAD", "PATCH", "POST"],
+        methods: ["OPTIONS", "GET", "HEAD", "PATCH", "POST", "DELETE"],
         allowedHeaders: [
             "content-type",
             "upload-length",
