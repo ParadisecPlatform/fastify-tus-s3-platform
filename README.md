@@ -3,6 +3,7 @@
 - [Fastify plugin for TUS uploads direct to S3](#fastify-plugin-for-tus-uploads-direct-to-s3)
   - [Install](#install)
   - [Example Usage](#example-usage)
+  - [Required metadata on your files](#required-metadata-on-your-files)
   - [Use it in your fastify server](#use-it-in-your-fastify-server)
     - [Supported TUS extensions](#supported-tus-extensions)
     - [CORS](#cors)
@@ -24,7 +25,22 @@ npm install -i @paradisec-platform/fastify-tus-s3-plugin
 -   To see an example of how to use it from nodejs go to
     [./src/tus-client-test.spec.js](./src/tus-client-test.spec.js)
 -   To see an example of how to use it with Uppy inside a VueJS app:
-    [./ui/sc/App.vue](./ui/src/App.vue)
+    [./ui/src/App.vue](./ui/src/App.vue)
+
+## Required metadata on your files
+
+This plugin requires some metadata on your files in order to operate:
+
+-   `filename`: (required) The Key to use when uploading to S3. Say you want to upload a local file
+    (test.txt) to somewhere in your bucket, then `filename: /path/to/file/test.txt`.
+-   `bucket`: (required) The bucket to which to upload this file. Obviously the keys you provide
+    must be able to access this bucket!
+-   `overwrite`: (optional, default: false). Whether or not to overwrite the file in the bucket if
+    it already exists.
+
+In the
+[Vue app example](https://github.com/ParadisecPlatform/fastify-tus-s3-platform/blob/master/ui/src/App.vue#L21-L24)
+the metadata is added to each file using the `onBeforeFileAdded` event.
 
 ## Use it in your fastify server
 
