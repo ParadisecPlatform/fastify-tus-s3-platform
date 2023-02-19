@@ -4,12 +4,13 @@
   - [Install](#install)
   - [Example Usage](#example-usage)
   - [Required metadata on your files](#required-metadata-on-your-files)
+  - [Supported TUS extensions](#supported-tus-extensions)
+  - [CORS](#cors)
   - [Use it in your fastify server](#use-it-in-your-fastify-server)
-    - [Supported TUS extensions](#supported-tus-extensions)
-    - [CORS](#cors)
     - [Setting max body size on the fastify instance](#setting-max-body-size-on-the-fastify-instance)
     - [Plugin configuration options.](#plugin-configuration-options)
   - [How it works](#how-it-works)
+  - [Cleaning up the cache](#cleaning-up-the-cache)
   - [Develop the plugin](#develop-the-plugin)
 
 This plugins adds support for TUS uploads that are sent directly to S3 as multi part uploads.
@@ -42,6 +43,16 @@ In the
 [Vue app example](https://github.com/ParadisecPlatform/fastify-tus-s3-platform/blob/master/ui/src/App.vue#L21-L24)
 the metadata is added to each file using the `onBeforeFileAdded` event.
 
+## Supported TUS extensions
+
+This plugin implements the `creation`, `expiration` and `termination` tus extensions.
+
+## CORS
+
+If your UI is at a different URI to your API you will need to setup CORS. Look at
+[./api/server.js](./api/server.js) for the methods and headers you will need to configure somewhere
+(your web proxy or fastify itself as this example shows) to enable all of this to work.
+
 ## Use it in your fastify server
 
 To integrate it into your server register it as you would any other fastify plugin:
@@ -65,16 +76,6 @@ fastify.register(tusS3Uploader, {
     defaultUploadExpiration: { hours: 6 },
 });
 ```
-
-### Supported TUS extensions
-
-This plugin implements the `creation`, `expiration` and `termination` tus extensions.
-
-### CORS
-
-If your UI is at a different URI to your API you will need to setup CORS. Look at
-[./api/server.js](./api/server.js) for the methods and headers you will need to configure somewhere
-(your web proxy or fastify itself as this example shows) to enable all of this to work.
 
 ### Setting max body size on the fastify instance
 
@@ -148,6 +149,15 @@ Final thought: node streams are used throughout (to save a chunk to the local fi
 the uploaded part from the buffer). This means the code (should be - hopefully!) is memory efficient
 as it never tries to load a full file chunk into memory. Not even when it does the part upload as
 that happens using a stream as well.
+
+## Cleaning up the cache
+
+When an upload completes successfully, any data in the server file cache is automatically cleaned
+up. However, if an upload fails, cache files and previous data blobs are left lying around. This is
+because the TUS protocol does not require TUS clients to send a request back to the server on
+failure so that cleanup can occur. In this case, you will need to have some kind of recurring task
+that purges files older than the expires lifetime you set for the server (e.g. if uploads expire
+after 6 hours then maybe cleanup anything older than 1 day).
 
 ## Develop the plugin
 
