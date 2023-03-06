@@ -2,3 +2,4 @@ node_modules
 s3-data
 .cache
 test-files
+dist
