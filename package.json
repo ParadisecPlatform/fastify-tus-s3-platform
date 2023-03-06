@@ -1,0 +1,43 @@
+{
+    "name": "fastify-tus-s3-plugin",
+    "version": "0.1.0",
+    "description": "A fastify plugin for a TUS endpoint that streams to S3",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "build": "node_modules/.bin/unbuild",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "files": [
+        "dist"
+    ],
+    "exports": {
+        ".": {
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "license": "GPL-3.0",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ParadisecPlatform/fastify-tus-s3-platform.git"
+    },
+    "author": "Marco La Rosa",
+    "bugs": {
+        "url": "https://github.com/ParadisecPlatform/fastify-tus-s3-platform/issues"
+    },
+    "homepage": "https://github.com/ParadisecPlatform/fastify-tus-s3-platform#readme",
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.282.0",
+        "@aws-sdk/lib-storage": "^3.282.0",
+        "@aws-sdk/s3-request-presigner": "^3.282.0",
+        "date-fns": "^2.29.3",
+        "debug": "^4.3.4",
+        "fastify-plugin": "^4.5.0",
+        "file-system-cache": "^2.0.2",
+        "fs-extra": "^11.1.0"
+    },
+    "devDependencies": {
+        "unbuild": "^1.1.2"
+    }
+}
