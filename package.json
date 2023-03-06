@@ -1,5 +1,5 @@
 {
-    "name": "fastify-tus-s3-plugin",
+    "name": "@paradisec-platform/fastify-tus-s3-plugin",
     "version": "0.1.0",
     "description": "A fastify plugin for a TUS endpoint that streams to S3",
     "main": "index.js",
