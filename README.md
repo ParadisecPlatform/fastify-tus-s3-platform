@@ -6,6 +6,8 @@
   - [Required metadata on your files](#required-metadata-on-your-files)
   - [Supported TUS extensions](#supported-tus-extensions)
   - [CORS](#cors)
+  - [Frontend proxy server](#frontend-proxy-server)
+    - [Configure the body size on your webserver](#configure-the-body-size-on-your-webserver)
   - [Use it in your fastify server](#use-it-in-your-fastify-server)
     - [Setting max body size on the fastify instance](#setting-max-body-size-on-the-fastify-instance)
     - [Plugin configuration options.](#plugin-configuration-options)
@@ -13,7 +15,7 @@
   - [Cleaning up the cache](#cleaning-up-the-cache)
   - [Develop the plugin](#develop-the-plugin)
 
-This plugins adds support for TUS uploads that are sent directly to S3 as multi part uploads.
+This plugin adds support for TUS uploads that are sent directly to S3 as multi part uploads.
 
 ## Install
 
@@ -52,6 +54,28 @@ This plugin implements the `creation`, `expiration` and `termination` tus extens
 If your UI is at a different URI to your API you will need to setup CORS. Look at
 [./api/server.js](./api/server.js) for the methods and headers you will need to configure somewhere
 (your web proxy or fastify itself as this example shows) to enable all of this to work.
+
+## Frontend proxy server
+
+More than likely, your fastify instance will be behind a web server like nginx or some other front
+end proxy. In that case, you will need some extra configuration on the webserver.
+
+Say your webserver (nginx) URL is `https://your.webserver.com` and it has configuration to proxy to
+the API as `http://your.webserver.com/api`. In the location block that proxies back to the api you
+need to define:
+
+```
+proxy_set_header X-Forwarded-Host 'http://your.webserver.com/api/files';
+```
+
+Have a look in [./nginx.conf](./nginx.conf) for a detailed, and working example.
+
+### Configure the body size on your webserver
+
+And be sure to set the max body size the webserver or proxy in front of fastify. Look up the docs
+for your server on how to do that. In the nginx example noted above we have
+`client_max_body_size 0;` which allows an unlimited body size. But if you don't like that, make sure
+it's at least as much as `bodyLimit` discussed in the next section.
 
 ## Use it in your fastify server
 
