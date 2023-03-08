@@ -14,7 +14,6 @@ export async function tusPostHandler(req, res) {
     if (result) return;
 
     // check x-forwarded-host header set and return bad request if not
-    console.log(req.headers);
     if (!req.headers["x-forwarded-host"]) {
         log("ERROR X-Forwarded-Host header not set");
         return res.badRequest(`You need to define the 'X-Forwarded-Host' header`);
@@ -43,7 +42,7 @@ export async function tusPostHandler(req, res) {
             Key: metadata.filename,
         });
         if (exists)
-            res.forbiddenError(
+            res.forbidden(
                 `The file exists and 'overwrite true' was not specified in the 'upload-metadata' header`
             );
     }
