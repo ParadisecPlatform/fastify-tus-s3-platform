@@ -13,6 +13,12 @@ export async function tusPostHandler(req, res) {
     let result = validateRequest.bind(this)(req, res);
     if (result) return;
 
+    // check x-forwarded-host header set and return bad request if not
+    if (!req.headers["x-forwarded-host"]) {
+        log("ERROR X-Forwarded-Host header not set");
+        return res.badRequest(error.message);
+    }
+
     // extra metadata from headers
     log("extract metadata from headers");
     let metadata;
@@ -53,8 +59,8 @@ export async function tusPostHandler(req, res) {
     const cacheFile = path.join(this.cache.basePath, uploadId);
     await remove(cacheFile);
 
-    const host = `${req.protocol}://${req.hostname}${req.url}`;
-    const location = `${host}/${uploadId}`;
+    // const host = `${req.protocol}://${req.hostname}${req.url}`;
+    const location = `${req.headers["x-forwarded-host"]}/${uploadId}`;
     const uploadExpires = add(new Date(), this.defaultUploadExpiration);
     const headers = {
         location,
