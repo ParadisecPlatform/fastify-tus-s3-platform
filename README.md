@@ -68,6 +68,9 @@ need to define:
 proxy_set_header X-Forwarded-Host 'http://your.webserver.com/api/files';
 ```
 
+Note that the full path to the TUS instance is defined. If you setup tus to run at `/uploads` then
+it would be `http://your.webserver.com/api/uploads`.
+
 Have a look in [./nginx.conf](./nginx.conf) for a detailed, and working example.
 
 ### Configure the body size on your webserver
