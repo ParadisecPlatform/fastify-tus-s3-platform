@@ -28,6 +28,7 @@ describe.only(`Test TUS PATCH handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "content-length": fileStats.size,
                 "upload-length": fileStats.size,
@@ -238,6 +239,7 @@ async function uploadFile({ file, filename, chunkSize = 100 }) {
     let response = await fetch("http://localhost:8080/files", {
         method: "POST",
         headers: {
+            "x-forwarded-host": "http://localhost:8080/files",
             "content-type": "application/offset+octet-stream",
             "upload-length": fileSize,
             "upload-metadata": `filename ${filename}, bucket ${bucket}, overwrite`,

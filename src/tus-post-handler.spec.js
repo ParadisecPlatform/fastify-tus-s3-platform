@@ -84,6 +84,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                "x-forwarded-host": "http://localhost:8080/files",
                 "upload-length": 100,
                 "upload-metadata": `filename ${filename}, bucket ${bucket}, overwrite ${overwrite}`,
             },
@@ -98,6 +99,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                "x-forwarded-host": "http://localhost:8080/files",
                 "upload-defer-length": 1,
                 "upload-metadata": `filename ${filename}, bucket ${bucket} `,
             },
@@ -114,6 +116,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "upload-length": fileStats.size,
                 "upload-metadata": `filename ${filename} `,
@@ -126,6 +129,7 @@ describe.only(`Test TUS POST handling`, () => {
         response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "content-length": 10,
                 "upload-length": fileStats.size,
@@ -143,6 +147,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "content-length": fileStats.size,
                 "upload-length": fileStats.size,

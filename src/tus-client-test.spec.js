@@ -131,6 +131,9 @@ function TusUpload({ endpoint, stream, metadata, quiet = false }) {
         const options = {
             endpoint,
             metadata,
+            headers: {
+                "x-forwarded-host": "http://localhost:8080/files",
+            },
             // chunk size = 128MB
             chunkSize: 128 * 1024 * 1024,
             onError(error) {

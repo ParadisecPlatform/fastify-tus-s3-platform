@@ -14,9 +14,10 @@ export async function tusPostHandler(req, res) {
     if (result) return;
 
     // check x-forwarded-host header set and return bad request if not
+    console.log(req.headers);
     if (!req.headers["x-forwarded-host"]) {
         log("ERROR X-Forwarded-Host header not set");
-        return res.badRequest(error.message);
+        return res.badRequest(`You need to define the 'X-Forwarded-Host' header`);
     }
 
     // extra metadata from headers
