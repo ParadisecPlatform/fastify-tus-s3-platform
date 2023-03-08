@@ -29,7 +29,7 @@ onMounted(() => {
         inline: true,
     });
     uppy.use(Tus, {
-        endpoint: "http://localhost:8080/files",
+        endpoint: "http://localhost:9000/api/files",
         retryDelays: null,
         chunkSize: 64 * 1024 * 1024,
     });
