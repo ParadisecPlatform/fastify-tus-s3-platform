@@ -32,6 +32,9 @@ onMounted(() => {
         endpoint: "http://localhost:9000/api/files",
         retryDelays: null,
         chunkSize: 64 * 1024 * 1024,
+        headers: {
+            authorization: "Bearer secret",
+        },
     });
 });
 </script>
