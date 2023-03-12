@@ -132,6 +132,7 @@ function TusUpload({ endpoint, stream, metadata, quiet = false }) {
             endpoint,
             metadata,
             headers: {
+                authorization: "Bearer secret",
                 "x-forwarded-host": "http://localhost:8080/files",
             },
             // chunk size = 128MB

@@ -15,6 +15,9 @@ describe.only(`Test TUS POST handling`, () => {
     it(`Should fail to perform a POST request as the required length headers are not set`, async () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
+            headers: {
+                authorization: "Bearer secret",
+            },
         });
         expect(response.status).toEqual(400);
     });
@@ -22,6 +25,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "upload-defer-length": "ummm",
             },
         });
@@ -31,6 +35,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "upload-length": 100,
                 "upload-defer-length": "",
             },
@@ -41,6 +46,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "upload-length": 100,
             },
         });
@@ -50,6 +56,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "upload-length": 100,
                 "upload-metadata": ``,
             },
@@ -60,6 +67,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "upload-length": 100,
                 "upload-metadata": `something xxxx`,
             },
@@ -71,6 +79,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "upload-length": 100000000000000000,
                 "upload-metadata": `filename ${filename}`,
             },
@@ -84,6 +93,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "x-forwarded-host": "http://localhost:8080/files",
                 "upload-length": 100,
                 "upload-metadata": `filename ${filename}, bucket ${bucket}, overwrite ${overwrite}`,
@@ -99,6 +109,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "x-forwarded-host": "http://localhost:8080/files",
                 "upload-defer-length": 1,
                 "upload-metadata": `filename ${filename}, bucket ${bucket} `,
@@ -116,6 +127,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "upload-length": fileStats.size,
@@ -129,6 +141,7 @@ describe.only(`Test TUS POST handling`, () => {
         response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "content-length": 10,
@@ -147,6 +160,7 @@ describe.only(`Test TUS POST handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "content-length": fileStats.size,

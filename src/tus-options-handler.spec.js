@@ -9,6 +9,9 @@ describe(`Test TUS OPTIONS handling`, () => {
     it.skip(`Should be able to perform an OPTIONS request and get the expected response`, async () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "OPTIONS",
+            headers: {
+                authorization: "Bearer secret",
+            },
         });
         expect(response.status).toEqual(204);
         expect(response.headers.has("tus-resumable")).toBeTrue;

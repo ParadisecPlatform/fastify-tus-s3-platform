@@ -15,6 +15,9 @@ describe.only(`Test TUS HEAD handling`, () => {
         const location = "http://localhost:8080/files/nosuchid";
         let response = await fetch(location, {
             method: "HEAD",
+            headers: {
+                authorization: "Bearer secret",
+            },
         });
         expect(response.status).toEqual(404);
         expect(response.headers.get("upload-offset")).toEqual(null);
@@ -28,6 +31,7 @@ describe.only(`Test TUS HEAD handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "content-length": fileStats.size,
@@ -41,6 +45,9 @@ describe.only(`Test TUS HEAD handling`, () => {
 
         response = await fetch(location, {
             method: "HEAD",
+            headers: {
+                authorization: "Bearer secret",
+            },
         });
         expect(response.status).toEqual(200);
         expect(response.headers.get("upload-offset")).toEqual(String(0));

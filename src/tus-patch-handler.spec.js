@@ -15,6 +15,9 @@ describe.only(`Test TUS PATCH handling`, () => {
     it(`Should fail to perform a patch request as id not found`, async () => {
         let response = await fetch("http://localhost:8080/files/idnotreal", {
             method: "PATCH",
+            headers: {
+                authorization: "Bearer secret",
+            },
         });
         expect(response.status).toEqual(404);
     });
@@ -28,6 +31,7 @@ describe.only(`Test TUS PATCH handling`, () => {
         let response = await fetch("http://localhost:8080/files", {
             method: "POST",
             headers: {
+                authorization: "Bearer secret",
                 "x-forwarded-host": "http://localhost:8080/files",
                 "content-type": "application/offset+octet-stream",
                 "content-length": fileStats.size,
@@ -45,6 +49,7 @@ describe.only(`Test TUS PATCH handling`, () => {
         response = await fetch(location, {
             method: "PATCH",
             headers: {
+                authorization: "Bearer secret",
                 "content-length": 100,
                 "upload-offset": uploadOffset,
                 "tus-resumable": "1.0.0",
@@ -58,6 +63,7 @@ describe.only(`Test TUS PATCH handling`, () => {
         response = await fetch(location, {
             method: "PATCH",
             headers: {
+                authorization: "Bearer secret",
                 "content-type": "application/octet-stream",
                 "content-length": 100,
                 "upload-offset": uploadOffset,
@@ -72,6 +78,7 @@ describe.only(`Test TUS PATCH handling`, () => {
         response = await fetch(location, {
             method: "PATCH",
             headers: {
+                authorization: "Bearer secret",
                 "content-type": "application/offset+octet-stream",
                 "upload-offset": uploadOffset,
                 "tus-resumable": "1.0.0",
@@ -85,6 +92,7 @@ describe.only(`Test TUS PATCH handling`, () => {
         response = await fetch(location, {
             method: "PATCH",
             headers: {
+                authorization: "Bearer secret",
                 "content-type": "application/offset+octet-stream",
                 "content-length": 100,
                 "tus-resumable": "1.0.0",
@@ -239,6 +247,7 @@ async function uploadFile({ file, filename, chunkSize = 100 }) {
     let response = await fetch("http://localhost:8080/files", {
         method: "POST",
         headers: {
+            authorization: "Bearer secret",
             "x-forwarded-host": "http://localhost:8080/files",
             "content-type": "application/offset+octet-stream",
             "upload-length": fileSize,
@@ -263,6 +272,7 @@ async function uploadFile({ file, filename, chunkSize = 100 }) {
             let response = await fetch(location, {
                 method: "PATCH",
                 headers: {
+                    authorization: "Bearer secret",
                     "content-type": "application/offset+octet-stream",
                     "content-length": chunk.length,
                     "upload-offset": start,
