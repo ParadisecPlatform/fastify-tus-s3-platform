@@ -66,14 +66,21 @@ async function main() {
     });
     fastify.register(fastifySensible);
     fastify.register(fastifyCompress);
-    fastify.register(tusS3Uploader, {
-        awsAccessKeyId: "root",
-        awsSecretAccessKey: "rootpass",
-        endpoint: "http://minio:9000",
-        forcePathStyle: true,
-        cachePath: "./.cache",
-        uploadRoutePath: "/files",
-        defaultUploadExpiration: { hours: 6 }, // https://date-fnsorg/v2.29.3/docs/add
+    fastify.register((fastify, options, done) => {
+        fastify.addHook("preHandler", async (req, res) => {
+            // fake middleware checking the caller is authorised
+            if (req.headers.authorization !== "Bearer secret") res.badRequest();
+        });
+        fastify.register(tusS3Uploader, {
+            awsAccessKeyId: "root",
+            awsSecretAccessKey: "rootpass",
+            endpoint: "http://minio:9000",
+            forcePathStyle: true,
+            cachePath: "./.cache",
+            uploadRoutePath: "/files",
+            defaultUploadExpiration: { hours: 6 }, // https://date-fnsorg/v2.29.3/docs/add
+        });
+        done();
     });
     fastify.addHook("onRequest", async (req, res) => {
         // console.log("***", req.method, req.url);
