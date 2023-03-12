@@ -6,11 +6,16 @@
   - [Required metadata on your files](#required-metadata-on-your-files)
   - [Supported TUS extensions](#supported-tus-extensions)
   - [CORS](#cors)
-  - [Frontend proxy server](#frontend-proxy-server)
+  - [Frontend proxy server configuration](#frontend-proxy-server-configuration)
+    - [Setting X-Forwarded-Host](#setting-x-forwarded-host)
+    - [Gzip and buffering](#gzip-and-buffering)
     - [Configure the body size on your webserver](#configure-the-body-size-on-your-webserver)
   - [Use it in your fastify server](#use-it-in-your-fastify-server)
     - [Setting max body size on the fastify instance](#setting-max-body-size-on-the-fastify-instance)
     - [Plugin configuration options.](#plugin-configuration-options)
+  - [Essential client side configuration](#essential-client-side-configuration)
+    - [Set the chunkSize on the client - @uppy/tus plugin](#set-the-chunksize-on-the-client---uppytus-plugin)
+    - [Set the chunkSize on the client - tus node-js-client](#set-the-chunksize-on-the-client---tus-node-js-client)
   - [How it works](#how-it-works)
   - [Cleaning up the cache](#cleaning-up-the-cache)
   - [Develop the plugin](#develop-the-plugin)
@@ -55,30 +60,35 @@ If your UI is at a different URI to your API you will need to setup CORS. Look a
 [./api/server.js](./api/server.js) for the methods and headers you will need to configure somewhere
 (your web proxy or fastify itself as this example shows) to enable all of this to work.
 
-## Frontend proxy server
+## Frontend proxy server configuration
+
+### Setting X-Forwarded-Host
 
 More than likely, your fastify instance will be behind a web server like nginx or some other front
 end proxy. In that case, you will need some extra configuration on the webserver.
 
 Say your webserver (nginx) URL is `https://your.webserver.com` and it has configuration to proxy to
 the API as `http://your.webserver.com/api`. In the location block that proxies back to the api you
-need to define:
+need to define the full path of the TUS endpoint on the `frontend server`:
 
 ```
 proxy_set_header X-Forwarded-Host 'http://your.webserver.com/api/files';
 ```
 
-Note that the full path to the TUS instance is defined. If you setup tus to run at `/uploads` then
-it would be `http://your.webserver.com/api/uploads`.
+If you setup tus to run at `/uploads` then it would be `http://your.webserver.com/api/uploads`.
 
-Have a look in [./nginx.conf](./nginx.conf) for a detailed, and working example.
+### Gzip and buffering
+
+You don't want the proxy zipping or buffering the content in any way. If you have gzip enabled at
+the server level, turn it off in the relevant location configuration. Also ensure the proxy is not
+buffering content. Have a look in [./nginx.conf](./nginx.conf) for a detailed, and working example.
 
 ### Configure the body size on your webserver
 
-And be sure to set the max body size the webserver or proxy in front of fastify. Look up the docs
-for your server on how to do that. In the nginx example noted above we have
-`client_max_body_size 0;` which allows an unlimited body size. But if you don't like that, make sure
-it's at least as much as `bodyLimit` discussed in the next section.
+Be sure to set the max body size of the webserver or proxy in front of fastify. Look up the docs for
+your server on how to do that. In the nginx example noted above we have `client_max_body_size 0;`
+which allows an unlimited body size. But if you don't like that, make sure it's at least as much as
+`bodyLimit` discussed in the next section.
 
 ## Use it in your fastify server
 
@@ -103,6 +113,10 @@ fastify.register(tusS3Uploader, {
     defaultUploadExpiration: { hours: 6 },
 });
 ```
+
+As this is a normal fastify plugin, you can use hooks to run middleware that do things like checking
+auth tokens and such. (Just remember to set the headers as required in the client you choose - read
+the docs for the client).
 
 ### Setting max body size on the fastify instance
 
@@ -132,6 +146,26 @@ buffered to send to S3:
 -   `defaultUploadExpiration`: (default: 6 hours). The default, maximum time an upload is allowed to
     run for. To set a different time follow the docs at https://date-fns.org/v2.29.3/docs/add.
 
+## Essential client side configuration
+
+Tou want the maximum body limit on the fastify server to be at least 128MB but you also need to tell
+the TUS client that the maximum chunk size it can send is 128MB. Note that the
+`chunkSize can be smaller than the maximum body limit` configured on the fastify instance.
+
+### Set the chunkSize on the client - @uppy/tus plugin
+
+The docs for the [@uppy/tus plugin](https://uppy.io/docs/tus/) defines a `chunkShize` config
+property.
+
+### Set the chunkSize on the client - tus node-js-client
+
+The docs for the [tus-node-js-client](https://github.com/tus/tus-js-client/blob/main/docs/api.md)
+describe a `chunkSize` config property.
+
+(Testing revealed that if you don't set it, the client will try to buffer as much as it can before
+sending to the server. That means the max body size on fastify needs to be (potentially) up to 1.2TB
+to handle uploading a file that big.)
+
 ## How it works
 
 Multipart uploads to S3 must operate in a specific way:
@@ -155,11 +189,7 @@ specifies the following limits:
 -   `maximumParts`: (default: 10,000) This is the AWS maximum number of parts limit.
 
 So, you want the maximum body limit on the fastify server to be at least 128MB but you also need to
-tell the TUS client that the maximum chunk size it can send is 128MB. The docs for the
-[tus-node-js-client](https://github.com/tus/tus-js-client/blob/main/docs/api.md) describe a
-`chunkSize` config property but if you don't set it, the client will try to buffer as much as it can
-before sending to the server. That means the max body size on fastify needs to be (potentially) up
-to 1.2TB to handle uploading a file that big.
+tell the TUS client that the maximum chunk size it can send is 128MB.
 
 In the example [UI](./ui/src/App.vue) / [API](./src/tus-client-test.spec.js) you can see examples
 where TUS is given a maximum chunk size of 64MB and 128MB respectively. That means chunks of that
